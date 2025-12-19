@@ -1,0 +1,55 @@
+[package]
+name = "regulator"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+bevy_ecs = "0.17.3"
+bevy_app = "0.17.3"
+bevy_tasks = "0.17.3"
+git2 = "0.20.3"
+petgraph = "0.8.3"
+notify = "8.2.0"
+serde = { version = "1.0", features = ["derive"] }
+uuid = { version = "1.11", features = ["v5", "serde"] }
+futures-lite = "2.6.0"
+
+[dev-dependencies]
+proptest = "1.9.0"
+# Use the hook feature to enable the husky manager
+cargo-husky = { version = "1.5.0", features = ["precommit-hook"] }
+
+[package.metadata.cargo-husky]
+# This tells husky exactly what to check before every commit
+hooks.pre-commit = "cargo fmt --all -- --check && cargo clippy --all-targets --all-features -- -D warnings"
+
+[lints.clippy]
+# Priority -1 allows these groups to be overridden by the specific 'allow' lints below.
+# Keep "all" on to catch real footguns + maintain baseline consistency.
+all = { level = "warn", priority = -1 }
+
+# Extra style/readability lints. Useful, but we curate the noisy ones below.
+# Opt into "pedantic" for steady style pressure.
+pedantic = { level = "warn", priority = -2 }
+
+# --- THE PRAGMATIC ALLOWS ---
+
+# Bevy ECS Query types get large fast; forcing aliases everywhere is busywork.
+type_complexity = "allow"
+
+# Bevy systems often take many params (Commands + Res + Query + Events + ...).
+# This lint pushes you toward over-abstraction in system signatures.
+too_many_arguments = "allow"
+
+# Rust module naming often repeats types (e.g. repo_sensor::RepoSensorPlugin).
+# The lint is subjective and tends to create churn without improving clarity.
+module_name_repetitions = "allow"
+
+# Bevy Res<T> and Commands are passed by value but act like handles/references.
+# Taking them by reference (&Res<T>) is non-idiomatic in Bevy.
+needless_pass_by_value = "allow"
+
+# Docstring requirements for internal Result/Panic logic can be overly verbose.
+# Toggle these to "allow" if you find # Errors / # Panics sections too noisy.
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
