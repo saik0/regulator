@@ -2,6 +2,10 @@
 name = "regulator"
 version = "0.0.1"
 edition = "2024"
+authors = ["saik0 <github@saik0.net>"]
+license = "MIT"
+description = "A deterministic, ECS-based control system and homoiconic mirror."
+repository = "https://github.com/saik0/regulator"
 
 [dependencies]
 bevy_ecs = "0.17.3"

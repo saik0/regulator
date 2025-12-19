@@ -105,3 +105,12 @@ cargo run
 </pre>
 
 *Nothing to see here. The system is holding.*
+
+---
+
+### ⚖️ License
+
+Regulator is a collaborative projection between human and machine intent.  
+Released under the [MIT License](LICENSE).
+
+Copyright (c) 2025 @saik0
