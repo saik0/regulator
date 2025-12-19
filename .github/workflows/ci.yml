@@ -15,14 +15,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install System Dependencies
+        # git2-rs needs these to compile its C-bindings on Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+
       - name: Install Rust
-        run: rustup update stable && rustup component add clippy rustfmt
+        run: |
+          rustup update stable
+          rustup component add clippy rustfmt
+
+      - name: Rust Cache
+        # Speeds up subsequent CI runs significantly
+        uses: Swatinem/rust-cache@v2
 
       - name: Check Formatting
+        # The first gate: Is the code aesthetically pure?
         run: cargo fmt --all -- --check
 
       - name: 'Pure' Clippy Enforcement
+        # The second gate: Is the logic pedantically correct?
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Run Tests
+        # The final gate: Does the reality match the algebra?
         run: cargo test --verbose
