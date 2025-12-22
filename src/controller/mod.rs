@@ -1,2 +1,2 @@
 pub mod systems;
-pub use systems::{ControllerPlugin, RegulatorPlugin};
+pub use systems::ControllerPlugin;

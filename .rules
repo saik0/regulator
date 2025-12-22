@@ -1,0 +1,49 @@
+# .rules for Regulator
+
+## 0. The Circuit Breaker & Reporting
+* **No Guessing:** If a transition, architectural choice, or contextual requirement is ambiguous, **STOP**. 
+* **Ambiguity Protocol:** Report the conflict immediately. If a capability (e.g., `UserSession`) is required but its
+  corresponding **FACT** is missing from the stream, stop and request the resolution.
+
+## 1. The Induction (Algebraic Bottom)
+* **The Inductive Bottom:** Every transition $f(T_n) \to T_{n+1}$ must be paired with a `proptest`.
+* **Algebraic Proof:** `proptest` serves as the proof that the transition is sound for the entire domain of `V`
+  and maintains identities (e.g., Idempotency).
+* **Property Verification:** Verify **Idempotency** ($f(f(F)) = f(F)$) to ensure the flow is stable across redundant
+  emissions.
+
+## 2. Contextual Capability & Lexical Scope
+* **Type-Enforced Context:** Actions requiring specific context (Session, Permission, etc.) **must** be encoded as
+  type-markers. Use `Context<S, T>` to gate logic at the type level.
+* **Witnesses:** Logic requires a "Witness" type proving the prerequisite **FACT** has been observed at transaction $T$.
+* **Downward Lexical Pressure:** All definitions (types, traits, helpers) **must** move to the lowest possible lexical
+  scope. If a helper is used once, define it inside that function.
+
+## 3. The Escape Hatch (Nomicon & Atomics)
+* **Hardware Flow:** `Atomic` types and `unsafe` blocks are permitted **only** to relieve contention and facilitate flow
+  where algebra or the type system cannot provide a zero-cost path.
+* **The Nomicon Standard:** Every `unsafe` block **must** be preceded by a `// SAFETY:` comment justifying alignment,
+  aliasing, initialization, and pointer validity.
+* **Proof-Carrying Logic:** Every `unreachable!()`, `panic!()`, or `.expect()` **must** be preceded by an
+  `// INVARIANT:` comment providing the human-readable logical proof.
+* **When to use it:** When something cannot be constrained by algebra or the type system—for example, to relieve
+  contention and remain lock-free, to **ALLOW** flow.
+
+## 4. Documentation (The Std-Lib Standard)
+* **Tone:** Use **Third-Person Singular Present Indicative** (e.g., "Returns," "Validates").
+* **Structure:** Public items **must** include `# Examples`. Use `# Panics`, `# Errors`, and `# Safety` as the formal
+  contract for the caller.
+* **Intra-doc Links:** Use square brackets `[` `]` to link all referenced types and methods for semantic navigation.
+
+---
+
+## Definition of Done (The Correspondence Checklist)
+- [ ] **Context Check:** Is the action gated by the required Context Marker (e.g., `SessionContext<Action>`)?
+- [ ] **Lexical Check:** Is every helper/type at the lowest possible lexical scope (pushed down)?
+- [ ] **No-Lock Check:** Is the code entirely free of `Mutex`, `RwLock`, `Cell`, and `RefCell`?
+- [ ] **Free of interioir mutability** 
+- [ ] **Monotonicity Check:** Is the Transaction $T$ strictly increasing ($T_{n+1} > T_n$)?
+- [ ] **Purity Check:** Is the transformation logic algebraically pure?
+- [ ] **Algebraic Check:** Do the `proptests` verify the induction's base case?
+- [ ] **Contract Audit:** Are all `// SAFETY:` and `// INVARIANT:` comments logically sound?
+- [ ] **Lints & Format:** Is `clippy` silent and `cargo fmt` applied?
