@@ -1,125 +1,150 @@
-// Regulator (control-systems framing):
-// - facts: truth by definition (Git-derived algebra)
-// - sensors: observe only
-// - controller: decides/schedules
-// - effectors: act only
-// - factory: the physical world state we care about
+// The Regulator Instance: "The Machine"
+//
+// STRUCTURE:
+// - firmware:  The static rules (formerly DNA).
+// - circuit:   The flow of sparks (formerly Metabolism).
+// - facts:     The storage and ledger (The Terminator).
+// - controller:The decision logic (The Nerve).
+// - sensors:   Input boundary (The Membrane).
+// - effectors: Output projection (The Projection).
+// - runtime:   The heartbeat loop (formerly Heart).
 
+// 1. The Modules (The Parts of the Machine)
+pub mod circuit;
 pub mod controller;
-pub mod dna;
 pub mod effectors;
 pub mod factory;
 pub mod facts;
+pub mod firmware;
+#[macro_use]
+pub mod hiero;
+pub mod runtime;
+pub mod seal;
 pub mod sensors;
 
 use bevy_app::{App, ScheduleRunnerPlugin, Update};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-// Unified re-exports.
+// Unified re-exports for the Switchboard
 pub use controller::*;
-pub use dna::*;
 pub use effectors::*;
 pub use factory::*;
 pub use facts::*;
+pub use firmware::*;
+pub use runtime::*;
 pub use sensors::*;
 
+// Specific Imports
 use crate::effectors::checkout_effector::CheckoutEffectorPlugin;
-use crate::facts::log::FactLog;
+use crate::facts::journal::Journal;
 
 /// Internal helper for high-precision timestamps.
+/// Used by the Circuit to timestamp sparks.
 ///
 /// # Panics
-///
-/// This function will panic if the system clock is set to a time before
-/// the Unix Epoch (January 1, 1970).
+/// Panics if the system clock is before `UNIX_EPOCH`.
 #[must_use]
 #[allow(clippy::cast_possible_truncation)]
 pub fn current_time_ns() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .expect("Time moved backwards")
+        .expect("FATAL: Time moved backwards")
         .as_nanos() as u64
 }
 
 fn startup_announcement() {
     static ONCE: std::sync::Once = std::sync::Once::new();
     ONCE.call_once(|| {
-        println!("_The system is holding now_");
+        println!("_The Machine is holding now_");
     });
 }
 
-/// Entry point for the runtime loop.
+/// Entry point for the Regulator Instance.
+/// This acts as the Switchboard, wiring the Circuit to the Runtime.
 pub fn run() {
     let mut app = App::new();
 
-    // 1. Initialize the Chronicle
-    let mut fact_log = FactLog::new();
+    // 1. Initialize the Journal (The Terminator / WAL)
+    // This is the source of Process Truth.
+    let mut journal = Journal::new();
 
-    // 2. The First Pulse
+    // 2. The First Spark
     let boot_fact = FactEnvelope::<Utterance> {
         entity: EntityId::new("regulator-core"),
-        value: "Regulator System Pulse: Online".to_string(),
+        value: Utterance("Hello World".to_string()),
         tx_time: current_time_ns(),
         valid_start: current_time_ns(),
         valid_end: None,
         op: OpKind::Assertion,
     };
 
-    fact_log.append_envelope(boot_fact);
+    // Commit to the Ledger (Terminates into JSON/Bytes)
+    journal.record(boot_fact);
 
-    // 3. Assemble the Metabolism
+    // 3. Assemble the Machine
     app.add_plugins(ScheduleRunnerPlugin::default())
         .add_plugins(CheckoutEffectorPlugin)
-        .add_plugins(ControllerPlugin) // Uses the unified plugin from systems.rs
-        .insert_resource(fact_log)
+        .add_plugins(ControllerPlugin) // Wires the "Nerve" (drive_regulator)
+        .insert_resource(journal) // Mounts the Ledger
         .insert_resource(TaskGraph::new(DagId::new("main-hierarchy")))
         .add_systems(Update, startup_announcement);
 
-    println!("--- Regulator Heart: Beating ---");
+    println!("--- Regulator Runtime: Beating ---");
     app.run();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::checkout_effector::CheckoutEffector;
-    use crate::dna::Utterance;
-    use crate::facts::envelope::{FactEnvelope, OpKind};
-    use crate::facts::ids::EntityId;
-    use bevy_app::App;
+    use crate::effectors::checkout_effector::CheckoutEffector;
+    use crate::facts::journal::Journal;
 
     #[test]
     fn test_fact_propagation_to_effector() {
         let mut app = App::new();
 
-        // 1. Setup the manifold components
-        let mut fact_log = FactLog::new();
+        // 1. Setup the Journal (Live RAM)
+        let mut journal = Journal::new();
+        // Use a fixed string to ensure identity matches exactly in the Regulator
         let target_id = EntityId::new("checkout-001");
 
-        // 2. Inject a "Start Checkout" fact into the Chronicle
+        // 2. Inject a Spark into the Ledger
         let start_fact = FactEnvelope::<Utterance> {
-            entity: target_id,
-            value: "Start Checkout".to_string(),
+            entity: target_id.clone(),
+            value: Utterance("Hello World".to_string()),
             tx_time: 1000,
             valid_start: 1000,
             valid_end: None,
             op: OpKind::Assertion,
         };
-        fact_log.append_envelope(start_fact);
 
-        // 3. Register our systems and resources
-        app.insert_resource(fact_log)
+        // Record it. The Ledger should return Offset(1).
+        let new_offset = journal.record(start_fact);
+        assert_eq!(
+            new_offset.0, 1,
+            "Ledger should return offset 1 for the first fact"
+        );
+
+        // 3. Wiring
+        // Ensure we use the SAME target_id instance for the effector so it listens
+        app.insert_resource(journal)
             .insert_resource(CheckoutEffector::new(target_id))
             .add_systems(Update, crate::controller::systems::drive_regulator);
 
-        // 4. Pulse the metabolism (One frame/tick)
+        // 4. Pulse the Circuit
         app.update();
 
-        // 5. Verify the Effector "witnessed" the truth
-        let effector = app.world().get_resource::<CheckoutEffector>().unwrap();
+        // 5. Assert
+        // The Regulator should have read the Ledger, Reified the JSON, and updated the Effector.
+        let effector = app
+            .world()
+            .get_resource::<CheckoutEffector>()
+            .expect("CheckoutEffector should be registered as a resource");
 
-        assert_eq!(effector.last_offset().0, 1);
-        // Note: Our effector updates status string based on Utterance
-        // Verify it matches the logic in CheckoutEffector::observe_utterance
+        assert_eq!(
+            effector.last_offset().0,
+            1,
+            "Effector should have moved to offset 1. The Algebra is closed."
+        );
     }
 }

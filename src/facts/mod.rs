@@ -1,7 +1,7 @@
 pub mod envelope;
 pub mod graph;
 pub mod ids;
-pub mod log;
+pub mod journal;
 pub mod offset;
 pub mod task;
 

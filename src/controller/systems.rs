@@ -1,14 +1,13 @@
-use crate::dna::{Stimulus, Utterance};
 use crate::effectors::Effector;
 use crate::facts::envelope::FactEnvelope;
-use crate::facts::log::FactLog;
+use crate::facts::journal::Journal;
+use crate::firmware::{Stimulus, Utterance};
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::change_detection::{Res, ResMut};
 
 /// Regulator spine: fans out facts to effectors by offset.
-/// This struct is for the "pure" non-Bevy execution path.
 pub struct Regulator {
-    pub log: FactLog,
+    pub journal: Journal,
     pub effectors: Vec<Box<dyn Effector>>,
 }
 
@@ -16,79 +15,95 @@ impl Regulator {
     pub fn tick(&mut self) {
         for effector in &mut self.effectors {
             let from = effector.last_offset();
-            let entries = self.log.scan_from(from);
+            let entries = self.journal.scan_from(from);
 
             for (raw, offset) in entries {
-                // INTERNAL REIFICATION LOGIC
                 match raw.aisle_id {
-                    100 => {
-                        if let Ok(value) = serde_json::from_slice::<String>(&raw.value_blob) {
+                    1 => {
+                        // AisleUtterance (U1)
+                        if let Ok(value_str) = serde_json::from_slice::<String>(&raw.value_blob) {
                             let env = FactEnvelope::<Utterance> {
                                 entity: raw.entity,
-                                value,
+                                // WRAP: String -> Utterance(String)
+                                value: Utterance(value_str),
                                 tx_time: raw.tx_time,
                                 valid_start: raw.valid_start,
                                 valid_end: raw.valid_end,
                                 op: raw.op,
                             };
                             effector.observe_utterance(&env, offset);
+                        } else {
+                            // LOGGING FIX: Use {:?} for Offset
+                            eprintln!("CRITICAL: Witness failed for Aisle 1 at offset {offset:?}");
                         }
                     }
-                    200 => {
-                        if let Ok(value) = serde_json::from_slice::<String>(&raw.value_blob) {
+                    2 => {
+                        // AisleStimulus (U2)
+                        if let Ok(value_str) = serde_json::from_slice::<String>(&raw.value_blob) {
                             let env = FactEnvelope::<Stimulus> {
                                 entity: raw.entity,
-                                value,
+                                // WRAP: String -> Stimulus(String)
+                                value: Stimulus(value_str),
                                 tx_time: raw.tx_time,
                                 valid_start: raw.valid_start,
                                 valid_end: raw.valid_end,
                                 op: raw.op,
                             };
                             effector.observe_stimulus(&env, offset);
+                        } else {
+                            eprintln!("CRITICAL: Witness failed for Aisle 2 at offset {offset:?}");
                         }
                     }
-                    _ => {} // Ignore unknown DNA aisles
+                    _ => {}
                 }
             }
         }
     }
 }
 
-/// Bevy wiring. This system drives the specific `CheckoutEffector` resource.
+/// Bevy system: Drives the regulator logic for every frame.
+///
+/// # Panics
+/// Panics if the Journal contains corrupted JSON data.
+/// This is a "Chain of Custody" violation and requires an immediate crash.
 pub fn drive_regulator(
-    log: Res<FactLog>,
+    journal: Res<Journal>,
     mut checkout: ResMut<crate::effectors::checkout_effector::CheckoutEffector>,
 ) {
     let from = checkout.last_offset();
-    let entries = log.scan_from(from);
+    let entries = journal.scan_from(from);
 
     for (raw, offset) in entries {
         match raw.aisle_id {
-            100 => {
-                if let Ok(value) = serde_json::from_slice::<String>(&raw.value_blob) {
-                    let env = FactEnvelope::<Utterance> {
-                        entity: raw.entity,
-                        value,
-                        tx_time: raw.tx_time,
-                        valid_start: raw.valid_start,
-                        valid_end: raw.valid_end,
-                        op: raw.op,
-                    };
-                    checkout.observe_utterance(&env, offset);
-                }
+            1 => {
+                let value_str = serde_json::from_slice::<String>(&raw.value_blob)
+                    .expect("FATAL: Journal corruption. Chain of Custody broken on Aisle 1.");
+
+                let env = FactEnvelope::<Utterance> {
+                    entity: raw.entity,
+                    // WRAP
+                    value: Utterance(value_str),
+                    tx_time: raw.tx_time,
+                    valid_start: raw.valid_start,
+                    valid_end: raw.valid_end,
+                    op: raw.op,
+                };
+                checkout.observe_utterance(&env, offset);
             }
-            200 => {
-                if let Ok(value) = serde_json::from_slice::<String>(&raw.value_blob) {
-                    let env = FactEnvelope::<Stimulus> {
-                        entity: raw.entity,
-                        value,
-                        tx_time: raw.tx_time,
-                        valid_start: raw.valid_start,
-                        valid_end: raw.valid_end,
-                        op: raw.op,
-                    };
-                    checkout.observe_stimulus(&env, offset);
-                }
+            2 => {
+                let value_str = serde_json::from_slice::<String>(&raw.value_blob)
+                    .expect("FATAL: Journal corruption. Chain of Custody broken on Aisle 2.");
+
+                let env = FactEnvelope::<Stimulus> {
+                    entity: raw.entity,
+                    // WRAP
+                    value: Stimulus(value_str),
+                    tx_time: raw.tx_time,
+                    valid_start: raw.valid_start,
+                    valid_end: raw.valid_end,
+                    op: raw.op,
+                };
+                checkout.observe_stimulus(&env, offset);
             }
             _ => {}
         }
@@ -99,7 +114,6 @@ pub struct ControllerPlugin;
 
 impl Plugin for ControllerPlugin {
     fn build(&self, app: &mut App) {
-        // The heart of the metabolism: pulse the regulator every frame
         app.add_systems(Update, drive_regulator);
     }
 }

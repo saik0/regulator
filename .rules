@@ -1,49 +1,71 @@
-# .rules for Regulator
+# regulator.rules.md
 
-## 0. The Circuit Breaker & Reporting
-* **No Guessing:** If a transition, architectural choice, or contextual requirement is ambiguous, **STOP**. 
-* **Ambiguity Protocol:** Report the conflict immediately. If a capability (e.g., `UserSession`) is required but its
-  corresponding **FACT** is missing from the stream, stop and request the resolution.
+This file is the **operational law** of Regulator.
 
-## 1. The Induction (Algebraic Bottom)
-* **The Inductive Bottom:** Every transition $f(T_n) \to T_{n+1}$ must be paired with a `proptest`.
-* **Algebraic Proof:** `proptest` serves as the proof that the transition is sound for the entire domain of `V`
-  and maintains identities (e.g., Idempotency).
-* **Property Verification:** Verify **Idempotency** ($f(f(F)) = f(F)$) to ensure the flow is stable across redundant
-  emissions.
-
-## 2. Contextual Capability & Lexical Scope
-* **Type-Enforced Context:** Actions requiring specific context (Session, Permission, etc.) **must** be encoded as
-  type-markers. Use `Context<S, T>` to gate logic at the type level.
-* **Witnesses:** Logic requires a "Witness" type proving the prerequisite **FACT** has been observed at transaction $T$.
-* **Downward Lexical Pressure:** All definitions (types, traits, helpers) **must** move to the lowest possible lexical
-  scope. If a helper is used once, define it inside that function.
-
-## 3. The Escape Hatch (Nomicon & Atomics)
-* **Hardware Flow:** `Atomic` types and `unsafe` blocks are permitted **only** to relieve contention and facilitate flow
-  where algebra or the type system cannot provide a zero-cost path.
-* **The Nomicon Standard:** Every `unsafe` block **must** be preceded by a `// SAFETY:` comment justifying alignment,
-  aliasing, initialization, and pointer validity.
-* **Proof-Carrying Logic:** Every `unreachable!()`, `panic!()`, or `.expect()` **must** be preceded by an
-  `// INVARIANT:` comment providing the human-readable logical proof.
-* **When to use it:** When something cannot be constrained by algebra or the type system—for example, to relieve
-  contention and remain lock-free, to **ALLOW** flow.
-
-## 4. Documentation (The Std-Lib Standard)
-* **Tone:** Use **Third-Person Singular Present Indicative** (e.g., "Returns," "Validates").
-* **Structure:** Public items **must** include `# Examples`. Use `# Panics`, `# Errors`, and `# Safety` as the formal
-  contract for the caller.
-* **Intra-doc Links:** Use square brackets `[` `]` to link all referenced types and methods for semantic navigation.
+Two layers:
+- **ENFORCED (now / soon):** rules you can actually fail-fast on.
+- **ASPIRATIONAL (README):** the worldview; allowed to be poetic.
 
 ---
 
-## Definition of Done (The Correspondence Checklist)
-- [ ] **Context Check:** Is the action gated by the required Context Marker (e.g., `SessionContext<Action>`)?
-- [ ] **Lexical Check:** Is every helper/type at the lowest possible lexical scope (pushed down)?
-- [ ] **No-Lock Check:** Is the code entirely free of `Mutex`, `RwLock`, `Cell`, and `RefCell`?
-- [ ] **Free of interioir mutability** 
-- [ ] **Monotonicity Check:** Is the Transaction $T$ strictly increasing ($T_{n+1} > T_n$)?
-- [ ] **Purity Check:** Is the transformation logic algebraically pure?
-- [ ] **Algebraic Check:** Do the `proptests` verify the induction's base case?
-- [ ] **Contract Audit:** Are all `// SAFETY:` and `// INVARIANT:` comments logically sound?
-- [ ] **Lints & Format:** Is `clippy` silent and `cargo fmt` applied?
+## ENFORCED: Circuit Breaker
+
+- **NO GUESSING.** If a transition, architectural choice, or contextual requirement is ambiguous: **STOP**.
+- If an action requires a capability (e.g. `UserSession`) but the corresponding **FACT** is missing: **STOP** and ask for resolution.
+
+---
+
+## ENFORCED: Algebraic Bottom (Induction)
+
+- Every transition `f(T_n) -> T_{n+1}` MUST have a paired `proptest`.
+- `proptest` is the proof: the transition is sound over the entire domain of `V`.
+- MUST verify **idempotency** where applicable: `f(f(F)) = f(F)`.
+
+---
+
+## ENFORCED: Contextual Capability (Types, not vibes)
+
+- Actions requiring context (Session, Permission, etc.) MUST be encoded as type markers (e.g. `Context<S, T>` / marker types).
+- If the type marker isn’t present, the action is illegal (compile-time preferred; runtime asserted if needed).
+
+---
+
+## ENFORCED: Runtime Laws (from README; promote to hard law)
+
+These are written as “laws” in the README; treat them as hard constraints as they become implementable:
+
+1) **Remain lock-free** — no `Mutex` / `RwLock`. :contentReference[oaicite:1]{index=1}
+2) **Zero interior mutability** — no `Cell` / `RefCell`. :contentReference[oaicite:2]{index=2}
+3) **Total purity** — evaluation without side effects (projection is pure). :contentReference[oaicite:3]{index=3}
+4) **Monotonic time** — `T_{n+1} > T_n`. :contentReference[oaicite:4]{index=4}
+5) **Lexical pressure** — definitions live at the lowest possible scope. :contentReference[oaicite:5]{index=5}
+
+---
+
+## ENFORCED: Definition of Done (Correspondence Checklist)
+
+- [ ] Context check: required context marker exists
+- [ ] Lexical check: helpers pushed down to lowest scope
+- [ ] No-lock check: no `Mutex`, `RwLock`, `Cell`, `RefCell`
+- [ ] Monotonicity check: transaction time strictly increases
+- [ ] Purity check: transformation logic is algebraically pure
+- [ ] Algebraic check: proptests cover the induction base case
+- [ ] Contract audit: `// SAFETY:` and `// INVARIANT:` comments are logically sound
+- [ ] Lints & format: clippy silent, `cargo fmt` applied
+
+---
+
+## ASPIRATIONAL: README Claims (allowed to be poetic)
+
+- “A regulator records **what happened** exactly once. Everything else is catching up.” :contentReference[oaicite:6]{index=6}
+- Facts: append-only, causal, consumable, replayable, deterministic, immutable, algebraic. :contentReference[oaicite:7]{index=7}
+- RA/LSP is described as “homeostasis,” LLMs as “effectors” absorbed only if they satisfy invariants. :contentReference[oaicite:8]{index=8}
+
+This layer is allowed to be ahead of implementation, but MUST NOT contradict ENFORCED rules.
+
+---
+
+## Notes
+
+- When in doubt: prefer **STOP + report conflict** over “helpful completion.”
+- If README disagrees with ENFORCED, README loses until the code catches up.
