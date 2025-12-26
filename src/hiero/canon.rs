@@ -1,4 +1,4 @@
-#![allow(clippy::doc_markdown)] // Work in Progress!
+#![allow(clippy::doc_markdown)]
 //! src/hiero/canon.rs
 //! The authoritative collection of Archetypal Glyphs.
 //! These act as the fixed "Stars" in the 6D discrete coordinate system.
@@ -16,12 +16,65 @@ glyph!(
     "fakt",
     "Immutable truth read from the journal. If this is wrong, the Regulator must stop.",
     Glyph {
-        role: Role::Noun,
+        role: Role::State,
         kind: Kind::Truth,
         force: Force::Law,
         temporal: Temporal::Static,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    SPARK,
+    "⚡",
+    "spärk",
+    "A transient proposal or impulse (Step<Proposal>). Validated but not yet hardened into history.",
+    Glyph {
+        role: Role::Catalyst,
+        kind: Kind::Process,
+        force: Force::Signal,
+        temporal: Temporal::Event,
+        enforcement: Enforcement::Hybrid,
+        failure: Failure::Discard,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    CELL,
+    "🦠",
+    "sel",
+    "The atomic unit of metabolic potential. A Fact viewed as a living input to the organism.",
+    Glyph {
+        role: Role::State,
+        kind: Kind::Lifecycle,
+        force: Force::Constraint,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Never,
+        failure: Failure::Confusion,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    ENVELOPE,
+    "✉️",
+    "ˈenvəˌlōp",
+    "The 7-dimensional tuple container (UUID, Type, Value, Tx, Vs, Ve, Op).",
+    Glyph {
+        role: Role::State,
+        kind: Kind::Boundary,
+        force: Force::Law,
+        temporal: Temporal::Static,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Invalid,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -37,6 +90,8 @@ glyph!(
         temporal: Temporal::Event,
         enforcement: Enforcement::Hybrid,
         failure: Failure::LoudFail,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -52,6 +107,8 @@ glyph!(
         temporal: Temporal::Emergent,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Illegal,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -65,12 +122,14 @@ glyph!(
     "ˈaljəbrə",
     "Canonical transformations and composition rules for validating logical equivalence.",
     Glyph {
-        role: Role::Noun,
+        role: Role::State,
         kind: Kind::Transformation,
         force: Force::Law,
         temporal: Temporal::Static,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Invalid,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -80,12 +139,14 @@ glyph!(
     "inˈverēənt",
     "A constraint that must never be violated. Must be verified before minting tokens.",
     Glyph {
-        role: Role::Noun,
+        role: Role::Gate,
         kind: Kind::Truth,
         force: Force::Law,
         temporal: Temporal::Static,
         enforcement: Enforcement::Hybrid,
         failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -101,6 +162,8 @@ glyph!(
         temporal: Temporal::Static,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Invalid,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -114,12 +177,14 @@ glyph!(
     "prōˈhibət",
     "Explicit 'do not do this'. Triggers a panic if the system attempts to cross.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Control,
         force: Force::Law,
         temporal: Temporal::Static,
         enforcement: Enforcement::Mechanical,
         failure: Failure::LoudFail,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -129,12 +194,14 @@ glyph!(
     "diˈskärd",
     "Valid but uninteresting data. Consciously ignored to preserve metabolic bandwidth.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Control,
         force: Force::Constraint,
         temporal: Temporal::Event,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Invalid,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -144,12 +211,14 @@ glyph!(
     "ˈentrəpē",
     "Unstructured noise or chaos used to test the resilience of Invariants.",
     Glyph {
-        role: Role::Noun,
+        role: Role::State,
         kind: Kind::Metric,
         force: Force::Signal,
         temporal: Temporal::Emergent,
         enforcement: Enforcement::Never,
         failure: Failure::Confusion,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -163,12 +232,14 @@ glyph!(
     "ˈnôrməˌlīz",
     "Reduce a problem to a centered, stable form to prevent operational thrash.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Transformation,
         force: Force::Constraint,
         temporal: Temporal::Event,
         enforcement: Enforcement::Human,
         failure: Failure::Confusion,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -178,12 +249,14 @@ glyph!(
     "ˈeksəˌkyo͞ot",
     "Apply facts to produce state. If results diverge from replay, the token is void.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Process,
         force: Force::Constraint,
         temporal: Temporal::Ongoing,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Divergence,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -193,12 +266,14 @@ glyph!(
     "rēˈplā",
     "Reconstruct behavior from historical facts. Verification, not storytelling.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Process,
         force: Force::Constraint,
         temporal: Temporal::Event,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Nondeterminism,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -212,12 +287,14 @@ glyph!(
     "ˈpreSHər",
     "The operational cost (RAM/CPU). High pressure forces load-shedding.",
     Glyph {
-        role: Role::Noun,
+        role: Role::Witness,
         kind: Kind::Metric,
         force: Force::Signal,
         temporal: Temporal::Ongoing,
         enforcement: Enforcement::Hybrid,
         failure: Failure::LoudFail,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -233,6 +310,8 @@ glyph!(
         temporal: Temporal::Event,
         enforcement: Enforcement::Never,
         failure: Failure::Confusion,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -242,12 +321,14 @@ glyph!(
     "əˈnäməlē",
     "A state of high divergence where logic no longer maps to historical fact.",
     Glyph {
-        role: Role::Lens,
+        role: Role::State,
         kind: Kind::Orientation,
         force: Force::Annotation,
         temporal: Temporal::Emergent,
         enforcement: Enforcement::Never,
         failure: Failure::Divergence,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -267,6 +348,8 @@ glyph!(
         temporal: Temporal::Static,
         enforcement: Enforcement::Mechanical,
         failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
     }
 );
 
@@ -276,11 +359,170 @@ glyph!(
     "flō",
     "Represents an ongoing lifecycle process with high temporal fluidity.",
     Glyph {
-        role: Role::Verb,
+        role: Role::Command,
         kind: Kind::Lifecycle,
         force: Force::Constraint,
         temporal: Temporal::Ongoing,
         enforcement: Enforcement::Human,
         failure: Failure::Drift,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+// ─────────────────────────────────────────────────────────────
+// 7. THE ORGANISM (Cybernetics)
+// ─────────────────────────────────────────────────────────────
+
+glyph!(
+    MIRROR,
+    "🪞",
+    "ˈmirər",
+    "The Reflexive Lens. The active projection of the system's state used for self-correction.",
+    Glyph {
+        role: Role::Lens,
+        kind: Kind::Orientation,
+        force: Force::Law,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Divergence,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    LINEAGE,
+    "🧬",
+    "ˈlinēij",
+    "The Ancestral Chain. An immutable, append-only record of structural evolution and provenance.",
+    Glyph {
+        role: Role::State,
+        kind: Kind::Truth,
+        force: Force::Law,
+        temporal: Temporal::Static,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    HEART,
+    "🫀",
+    "härt",
+    "The Controller. It pumps the Tn pulse that synchronizes the organism.",
+    Glyph {
+        role: Role::Catalyst,
+        kind: Kind::Process,
+        force: Force::Law,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    MEDULLA,
+    "⚖️",
+    "məˈdələ",
+    "Rust-Analyzer (Left Brain). Enforces homeostasis, types, and algebra.",
+    Glyph {
+        role: Role::Gate,
+        kind: Kind::Control,
+        force: Force::Law,
+        temporal: Temporal::Static,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    HAND,
+    "👐",
+    "hand",
+    "Agentic LLM (Right Brain). The effector that manipulates intent into code.",
+    Glyph {
+        role: Role::Command,
+        kind: Kind::Transformation,
+        force: Force::Signal,
+        temporal: Temporal::Event,
+        enforcement: Enforcement::Hybrid,
+        failure: Failure::LoudFail,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    SENSOR,
+    "👁️",
+    "ˈsensər",
+    "Proprioception (LSP). Feels the lexical pressure and semantic tension.",
+    Glyph {
+        role: Role::Witness,
+        kind: Kind::Metric,
+        force: Force::Signal,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Confusion,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    LOOP,
+    "🔄",
+    "lo͞op",
+    "Active Inference. The cycle of Sensing, Acting, and Verifying to minimize surprise.",
+    Glyph {
+        role: Role::Command,
+        kind: Kind::Lifecycle,
+        force: Force::Constraint,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Drift,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    GOVERNOR,
+    "🎡",
+    "ˈɡəvərnər",
+    "The Kinetic Bound. Mechanically arrests the system to maintain ethical equilibrium.",
+    Glyph {
+        role: Role::Gate,
+        kind: Kind::Control,
+        force: Force::Law,
+        temporal: Temporal::Static,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Stop,
+        version: 1,
+        reserved: 0,
+    }
+);
+
+glyph!(
+    REGULATOR,
+    "🎛️",
+    "ˈreɡyəˌlādər",
+    "The Cybernetic Steersman. The self-referential agent that orients the system towards True North.",
+    Glyph {
+        role: Role::Lens,
+        kind: Kind::Orientation,
+        force: Force::Law,
+        temporal: Temporal::Ongoing,
+        enforcement: Enforcement::Mechanical,
+        failure: Failure::Drift,
+        version: 1,
+        reserved: 0,
     }
 );

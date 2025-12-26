@@ -1,68 +1,49 @@
-// src/hiero/macros.rs
-
 #[macro_export]
 macro_rules! glyph {
     ($name:ident, $sigil:expr, $phonetic:expr, $doc:expr, $data:expr) => {
         #[doc = $doc]
         #[doc = ""]
-        #[doc = "### Phonetic"]
-        #[doc = $phonetic]
+        #[doc = "---"]
+        #[doc = "### 🗣️ Phonetic"]
+        #[doc = concat!("`/", $phonetic, "/`")]
         #[doc = ""]
-        #[doc = "### Physics"]
-        #[doc = "6-dimensional discrete manifold coordinate."]
-        #[allow(non_camel_case_types)] // Work in Progress!
+        #[doc = "### 📐 Physics"]
+        #[doc = concat!("**Sigil:** ", $sigil)]
+        #[doc = ""]
+        #[doc = "**Manifold Coordinate (64-bit Aligned):**"]
+        #[doc = "This constant is a fixed point in the discrete semantic space."]
+        #[allow(non_camel_case_types)]
         pub trait $name {
             const SIGIL: &'static str = $sigil;
             const LABEL: &'static str = stringify!($name);
             const PHONETIC: &'static str = $phonetic;
         }
 
+        // Allow the Glyph struct to act as a witness for this Archetype
         impl $name for $crate::hiero::physics::Glyph {}
 
-        #[doc = $doc]
-        #[allow(non_camel_case_types)] // Work in Progress!
-        pub const $name: $crate::hiero::physics::Glyph = $crate::hiero::physics::Glyph {
-            role: $data.role,
-            kind: $data.kind,
-            force: $data.force,
-            temporal: $data.temporal,
-            enforcement: $data.enforcement,
-            failure: $data.failure,
-        };
+        #[doc = concat!("The canonical **", stringify!($name), "** Archetype.")]
+        #[doc = ""]
+        #[doc = "Contains the specific 6D coordinate + padding bytes."]
+        #[allow(non_camel_case_types)]
+        pub const $name: $crate::hiero::physics::Glyph = $data;
     };
 }
 
-/// Enforces the "Physical Boundary" of a dimension.
-///
-/// This macro generates a `from_u8` constructor for `repr(u8)` enums.
-/// It provides a zero-cost transition from raw metabolic math back into
-/// the safe, named types of the Hiero system.
-///
-/// # Logic
-/// 1. If the input `v` is within the valid variant range, it uses a
-///    high-speed bit-copy (transmute).
-/// 2. If `v` exceeds the range (e.g., during an aggressive lerp), it
-///    snaps the value to the `$max` variant (the "Safety Rail").
-///
-/// # Safety
-/// This is safe because it explicitly checks bounds before performing
-/// the transmute. It prevents Undefined Behavior (UB) caused by
-/// "Invalid Discriminants."
+
+/// Generates `from_u8` that snaps unsafe bytes to the nearest valid physical constant.
+/// This prevents undefined behavior when lerping produces "out of bounds" bytes.
 #[macro_export]
 macro_rules! impl_safe_physics {
-    ($t:ty, $max:expr) => {
-        impl $t {
-            /// Safely snaps a raw byte to the nearest valid enum variant.
-            #[inline]
-            pub fn from_u8(v: u8) -> Self {
-                // The compiler optimizes this into a branchless CMOV instruction.
-                if v <= ($max as u8) {
-                    // SAFETY: Bound is checked above; value is guaranteed
-                    // to be a valid bit-pattern for this repr(u8) enum.
-                    unsafe { std::mem::transmute::<u8, $t>(v) }
-                } else {
-                    $max
-                }
+    ($type:ty, $max_variant:expr) => {
+        impl $type {
+            #[inline(always)]
+            pub fn from_u8(val: u8) -> Self {
+                // SAFETY: We camp the input to the max variant discriminator.
+                // Since our enums are repr(u8) and continuous from 0..=MAX,
+                // this transmute is strictly safe.
+                let clamped = val.min($max_variant as u8);
+                unsafe { std::mem::transmute(clamped) }
             }
         }
     };
